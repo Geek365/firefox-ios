@@ -130,7 +130,7 @@ extension ActivityStreamPanel {
             switch self {
             case .Highlights: return 40
             case .TopSites: return 0
-            case .HighlightIntro: return 0
+            case .HighlightIntro: return 2
             }
         }
 
@@ -156,7 +156,9 @@ extension ActivityStreamPanel {
             case .TopSites:
                 return nil
             case .HighlightIntro:
-                return nil
+                let view = ASHeaderView()
+                view.title = title
+                return view
             }
         }
 
