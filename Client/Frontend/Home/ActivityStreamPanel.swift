@@ -66,6 +66,7 @@ class ActivityStreamPanel: UITableViewController, HomePanel {
 
         tableView.registerClass(AlternateSimpleHighlightCell.self, forCellReuseIdentifier: "HistoryCell")
         tableView.registerClass(ASHorizontalScrollCell.self, forCellReuseIdentifier: "TopSiteCell")
+        tableView.registerClass(HighlightIntroCell.self, forCellReuseIdentifier: "HighlightIntroCell")
         tableView.backgroundColor = ASPanelUX.backgroundColor
         tableView.separatorStyle = .None
         tableView.delegate = self
@@ -111,13 +112,15 @@ extension ActivityStreamPanel {
     enum Section: Int {
         case TopSites
         case Highlights
+        case HighlightIntro
 
-        static let count = 2
+        static let count = 3
 
         var title: String? {
             switch self {
             case .Highlights: return Strings.ASHighlightsTitle
             case .TopSites: return nil
+            case .HighlightIntro: return nil
             }
         }
 
@@ -125,6 +128,7 @@ extension ActivityStreamPanel {
             switch self {
             case .Highlights: return 40
             case .TopSites: return 0
+            case .HighlightIntro: return 0
             }
         }
 
@@ -137,6 +141,7 @@ extension ActivityStreamPanel {
                 } else {
                     return CGFloat(Int(width / ASPanelUX.TopSiteSingleRowRatio)) + ASPanelUX.PageControlOffsetSize
                 }
+            case .HighlightIntro: return UITableViewAutomaticDimension
             }
         }
 
@@ -148,6 +153,8 @@ extension ActivityStreamPanel {
                 return view
             case .TopSites:
                 return nil
+            case .HighlightIntro:
+                return nil
             }
         }
 
@@ -155,6 +162,7 @@ extension ActivityStreamPanel {
             switch self {
             case .TopSites: return "TopSiteCell"
             case .Highlights: return "HistoryCell"
+            case .HighlightIntro: return "HighlightIntroCell"
             }
         }
 
@@ -173,6 +181,10 @@ extension ActivityStreamPanel {
 extension ActivityStreamPanel {
 
     override func tableView(tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        // If the highlights section is empty. Don't show the header
+        if section == Section.Highlights.rawValue {
+            return 0
+        }
         return Section(section).headerHeight
     }
 
@@ -196,7 +208,7 @@ extension ActivityStreamPanel {
             ASOnyxPing.reportTapEvent(event)
             let site = self.highlights[indexPath.row]
             showSiteWithURLHandler(NSURL(string:site.url)!)
-        case .TopSites:
+        case .TopSites, .HighlightIntro:
             return
         } 
     }
@@ -214,7 +226,9 @@ extension ActivityStreamPanel {
             case .TopSites:
                 return topSitesManager.content.isEmpty ? 0 : 1
             case .Highlights:
-                 return self.highlights.count
+                return 0
+            case .HighlightIntro:
+                return 1//self.highlights.isEmpty ? 1 : 0
         }
     }
 
@@ -227,6 +241,8 @@ extension ActivityStreamPanel {
             return configureTopSitesCell(cell, forIndexPath: indexPath)
         case .Highlights:
             return configureHistoryItemCell(cell, forIndexPath: indexPath)
+        case .HighlightIntro:
+            return configureHighlightIntroCell(cell, forIndexPath: indexPath)
         }
     }
 
@@ -243,6 +259,11 @@ extension ActivityStreamPanel {
         return simpleHighlightCell
     }
 
+    func configureHighlightIntroCell(cell: UITableViewCell, forIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+        let introCell = cell as! HighlightIntroCell
+        //The cell is configured on creation. No need to configure
+        return introCell
+    }
 }
 
 // MARK: - Data Management
@@ -354,6 +375,8 @@ extension ActivityStreamPanel {
             let pointInTopSite = longPressGestureRecognizer.locationInView(topSiteCell.collectionView)
             guard let topSiteIndexPath = topSiteCell.collectionView.indexPathForItemAtPoint(pointInTopSite) else { return }
             contextMenuForTopSiteCellWithIndexPath(topSiteIndexPath)
+        case .HighlightIntro:
+            break
         }
     }
 
