@@ -32,6 +32,7 @@ class ActivityStreamPanel: UITableViewController, HomePanel {
     private let profile: Profile
     private var onyxSession: OnyxSession?
     private let topSitesManager = ASHorizontalScrollCellManager()
+    private var isInitialLoad = true //Prevents empty states from flickering while content is loading
 
     lazy var longPressRecognizer: UILongPressGestureRecognizer = {
         return UILongPressGestureRecognizer(target: self, action: #selector(ActivityStreamPanel.longPress(_:)))
@@ -84,6 +85,7 @@ class ActivityStreamPanel: UITableViewController, HomePanel {
         self.onyxSession = OnyxTelemetry.sharedClient.beginSession()
 
         all([invalidateTopSites(), invalidateHighlights()]).uponQueue(dispatch_get_main_queue()) { _ in
+            self.isInitialLoad = false
             self.reloadAll()
         }
     }
@@ -182,7 +184,7 @@ extension ActivityStreamPanel {
 
     override func tableView(tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         // If the highlights section is empty. Don't show the header
-        if section == Section.Highlights.rawValue {
+        if section == Section.Highlights.rawValue && highlights.isEmpty {
             return 0
         }
         return Section(section).headerHeight
@@ -226,9 +228,9 @@ extension ActivityStreamPanel {
             case .TopSites:
                 return topSitesManager.content.isEmpty ? 0 : 1
             case .Highlights:
-                return 0
+                return self.highlights.count
             case .HighlightIntro:
-                return 1//self.highlights.isEmpty ? 1 : 0
+                return self.highlights.isEmpty && !self.isInitialLoad ? 1 : 0
         }
     }
 
